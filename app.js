@@ -1,4 +1,5 @@
 const express = require("express");
+const MongoStore = require("connect-mongo");
 const path = require("path");
 const hbs = require("hbs");
 const PORT = 3000;
@@ -15,6 +16,11 @@ app.use(
         secret: "keyboard cat",
         resave: false,
         saveUninitialized: true,
+        // this is done to make session map available to the db though we have restarted the server.
+        store: MongoStore.create({
+            mongoUrl:
+                "mongodb+srv://goeldaksh2008:Pikachu2008@cluster0.dhngknr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+        }),
     })
 );
 hbs.registerPartials(path.join(__dirname, "/views/partials"));
@@ -22,7 +28,10 @@ hbs.registerPartials(path.join(__dirname, "/views/partials"));
 app.use("/", require("./routes/user"));
 
 mongoose
-    .connect("mongodb://127.0.0.1:27017/authentication")
+    .connect(
+        // connecting to the cloud database mongodbAtlas
+        "mongodb+srv://goeldaksh2008:Pikachu2008@cluster0.dhngknr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    )
     .then(() => {
         app.listen(PORT, () => {
             console.log(`http://localhost:` + PORT);
