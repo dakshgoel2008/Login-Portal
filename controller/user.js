@@ -1,6 +1,7 @@
-const User = require("../models/user"); // requiring the collection userDB
+const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
+
 module.exports.getHome = async (req, res, next) => {
     try {
         res.render("index", { title: "Home" });
@@ -26,22 +27,24 @@ module.exports.getSignUp = async (req, res, next) => {
 };
 
 module.exports.postSignUp = async (req, res, next) => {
-    const { username, password } = req.body; // retrieved from <form> made in hbs files.
+    if (req.session.isLoggedIn) {
+        res.redirect("/profile");
+    }
+    const { username, password } = req.body;
     try {
-        let user = await User.findOne({ username }); // apply search in db named 'authentication' in 'app.js file'
-        // if user existed select new username
+        let user = await User.findOne({ username });
         if (user) {
             return res.render("signUp", { msg: "User already exists" });
         }
         bcrypt.hash(password, saltRounds, async function (err, hash) {
-            // Store hash in your password DB.
-            // else mein collection ko create karo
+            if (err) {
+                return next(err);
+            }
             user = await User.create({
-                // creating document in collection userDB
                 username,
                 password: hash,
             });
-            res.render("login", { msg: "User crated successfully created" });
+            res.render("login", { msg: "User successfully created" });
         });
     } catch (err) {
         next(err);
@@ -50,25 +53,47 @@ module.exports.postSignUp = async (req, res, next) => {
 
 module.exports.getProfile = async (req, res, next) => {
     try {
-        res.render("profile");
+        res.render("profile", {
+            username: req.session.username,
+            isLoggedIn: req.session.isLoggedIn,
+        });
     } catch (err) {
         next(err);
     }
 };
 
 module.exports.postLogin = async (req, res, next) => {
+    if (req.session.isLoggedIn) {
+        res.redirect("/profile");
+    }
     const { username, password } = req.body;
     try {
         let user = await User.findOne({ username });
         if (!user) {
             return res.render("login", { msg: "Wrong username - password" });
         }
-        // here password is the string that user is entering on being signed up once
-        // and user.password is the actual password of that particular user.
         bcrypt.compare(password, user.password, function (err, result) {
-            if (result) res.render('profile',{username})
+            if (err) {
+                return next(err);
+            }
+            if (result) {
+                req.session.username = username;
+                req.session.isLoggedIn = true;
+                res.redirect("/profile");
+            } else {
+                res.render("login", { msg: "Wrong username - password" });
+            }
         });
     } catch (err) {
         next(err);
     }
+};
+
+module.exports.postLogOut = (req, res) => {
+    req.session.destroy(function (err) {
+        if (err) {
+            return next(err);
+        }
+        res.redirect("/");
+    });
 };
