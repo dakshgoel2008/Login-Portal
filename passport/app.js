@@ -30,6 +30,20 @@ hbs.registerPartials(path.join(__dirname, "/views/partials"));
 
 app.use("/", routes);
 
+app.get(
+    "/auth/google",
+    passport.authenticate("google", { scope: ["profile"] })
+);
+
+app.get(
+    "/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/login" }),
+    function (req, res) {
+        // Successful authentication, redirect home.
+        res.redirect("/profile");
+    }
+);
+
 mongoose.connect("mongodb://127.0.0.1:27017/authentication").then(() => {
     app.listen(PORT, () => {
         console.log(`http://localhost:` + PORT);

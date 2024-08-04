@@ -24,6 +24,12 @@
     <body>
         <main>
             <h1>Welcome {{user.username}}</h1>
+            <form action="/logout" method="post">
+                <button
+                    class="btn btn-outline-danger"
+                    type="submit"
+                >LogOut</button>
+            </form>
         </main>
 
         <script

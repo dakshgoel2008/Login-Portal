@@ -1,5 +1,6 @@
 const passport = require("passport"); // main passport extension
 const LocalStrategy = require("passport-local");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 
@@ -25,6 +26,36 @@ passport.use(
             done(err);
         }
     })
+);
+
+passport.use(
+    new GoogleStrategy(
+        {
+            clientID:
+                "699933352506-ev09nokpnu073c1qp1e5le0t2g4bftut.apps.googleusercontent.com",
+            clientSecret: "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",
+            callbackURL: "http://localhost:4444/auth/google/callback",
+        },
+        async function (accessToken, refreshToken, profile, done) {
+            try {
+                let user = await User.findOne({ googleId: profile.id });
+                if (!user) {
+                    user = await User.create({
+                        googleId: profile.id,
+                        username: profile.displayName,
+                        googleImg: profile.picture,
+                        googleAccessToken: accessToken,
+                    });
+                }
+                return done(null, user);
+            } catch (err) {
+                done(err);
+            }
+            // User.findOrCreate({ googleId: profile.id }, function (err, user) {
+            //     return cb(err, user);
+            // });
+        }
+    )
 );
 
 // passport setup
